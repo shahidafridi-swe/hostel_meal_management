@@ -1,33 +1,10 @@
-
-class DailyMeal:
-    def __init__(self, member, day_number, meal_quantity) -> None:
-        self.member = member
-        self.day_number = day_number
-        self.meal_quantity = meal_quantity
-
-class DailyBazar:
-    def __init__(self, member, day_number, bazar_description, bazar_amount) -> None:
-        self.member = member
-        self.day_number = day_number
-        self.bazar_description = bazar_description
-        self.bazar_amount = bazar_amount
-
-
-class Month:
-    def __init__(self, name,year) -> None:
-        self.name = name
-        self.year = year 
-        self.total_meal = 0
-        self.total_bazar = 0
-        self.meal_rate = 0
-        self.days = []
-        self.daily_meal = {}
-        self.daily_bazar = {}
+from month import DailyBazar, DailyMeal, Month
 
 class Hostel:
     def __init__(self, name) -> None:
         self.name = name 
         self.members = []
+        self.admins = []
         self.months_data = {}
     
     
@@ -36,26 +13,144 @@ class Hostel:
         for key, value in self.months_data.items():
             if key == month+year:
                 value.daily_meal.append({member:daily_meal_data})
+                value.total_meal += meal_quantity
                 print("Daily meal added")
                 return
         print("Month sheet not found !")
 
-    def add_daily_meal(self, member,day_number, month, year, bazar_description, bazar_amount):
+    def add_daily_bazar(self, member,day_number, month, year, bazar_description, bazar_amount):
         daily_bazar_data = DailyBazar(member,day_number,bazar_description, bazar_amount)
         for key, value in self.months_data.items():
             if key == month+year:
-                value.daily_meal.append({member:daily_bazar_data})
+                value.daily_bazar.append({member:daily_bazar_data})
+                value.total_bazar += bazar_amount
                 print("Daily bazar added")
                 return
         print("Month sheet not found !")
             
+    def view_single_member_month_data(self, member, month, year):
+        month_year_key = f"{month}{year}"
+        if month_year_key in self.months_data:
+            this_month_data = self.months_data[month_year_key]
+            total_meal = 0
+            total_bazar = 0
+            data = {str(day): {'meal': '-', 'bazar': '-' , 'bazar_description': '-'} for day in range(1, 32)}
+            
+            for daily_meal_data in this_month_data.daily_meal:
+                if member in daily_meal_data:
+                    day_number = str(daily_meal_data[member].day_number)
+                    data[day_number]['meal'] = daily_meal_data[member].meal_quantity
+                    total_meal += daily_meal_data[member].meal_quantity
+            
+            for daily_bazar_data in this_month_data.daily_bazar:
+                if member in daily_bazar_data:
+                    day_number = str(daily_bazar_data[member].day_number)
+                    data[day_number]['bazar'] = daily_bazar_data[member].bazar_amount
+                    total_bazar += daily_bazar_data[member].bazar_amount
+                    data[day_number]['bazar_description'] = daily_bazar_data[member].bazar_description
+            
+            print(f"\n\t------- Monthly Data of Month: {month}, Year: {year} of {member.name} -------")
+            print("\tDate\tMeal\tBazar\tBazar Description")
+            print('\t---------------------------------------------')
+
+            for day, values in data.items():
+                print(f"\t{day}\t{values['meal']}\t{values['bazar']} BDT\t{values['bazar_description']}")
+
+            print("\n\tYour total meal qunatity of this month: ", total_meal)
+            print("\tYour total Bazar amount of this month: ", total_bazar, "BDT")
+            print('------------------------------------------------------------------------')
+
+
+        else:
+            print(f"Sorry! Month: {month} & Year: {year} of data not found ")
+
+
+    def view_all_member_month_data(self, month, year):
+        month_year_key = f"{month}{year}"
+        if month_year_key in self.months_data:
+            this_month_data = self.months_data[month_year_key]
+            try: 
+                meal_rate =  this_month_data.total_bazar / this_month_data.total_meal
+            except(ZeroDivisionError):
+                meal_rate = "There is no meal"
+
+            meal_data = {str(day): [] for day in range(1, 32)}
+            for daily_meal_data in this_month_data.daily_meal:
+                for daily_meal_obj in daily_meal_data.values():
+                    day_number = daily_meal_obj.day_number
+                    meal_data[day_number].append(daily_meal_obj)
+
+            
+            meal_array = [['-' for _ in range(len(self.members)+1)] for _ in range(31)]
+            # Set the first column values to 1 through 31
+            for i in range(31):
+                meal_array[i][0] = i + 1
+            
+
+           
+            for key, value in meal_data.items():
+                for mem in self.members:
+                    for x in value:
+                        if mem == x.member:
+                            meal_array[int(key)-1][self.members.index(mem)+1] = x.meal_quantity
+                      
     
-    def single_member_month_data(self, member, month, year):
-        result = {}
-        for key, value in self.months_data.items():
-            if key == month+year:
-                for k,v in value.daily_meal.items():
-                    if k == 
+            print("\n\t------- All Member's Meal -------")
+            print("\tDate", end="")
+            for mem in self.members:
+                print(f"\t{mem.name}" , end="")
+            print("")
+            print('\t---------------------------------------------')
+
+            for row in meal_array:
+                for col in row:
+                    print(f"\t{col}", end="")
+                print("")
+
+
+            bazar_array = [['-' for _ in range(len(self.members)+1)] for _ in range(31)]
+            for i in range(31):
+                bazar_array[i][0] = i + 1
+            bazar_data = {str(day): [] for day in range(1, 32)}
+            for daily_bazar_data in this_month_data.daily_bazar:
+                for daily_bazar_obj in daily_bazar_data.values():
+                    day_number = daily_bazar_obj.day_number
+                    bazar_data[day_number].append(daily_bazar_obj)
+            
+            for key, value in bazar_data.items():
+                for mem in self.members:
+                    for x in value:
+                        if mem == x.member:
+                            bazar_array[int(key)-1][self.members.index(mem)+1] = x.bazar_amount
+
+            print("\n\t------- All Member's Bazar -------")
+            print("\tDate", end="")
+            for mem in self.members:
+                print(f"\t{mem.name}" , end="")
+            print("")
+            print('\t---------------------------------------------')
+
+            for row in bazar_array:
+                for col in row:
+                    print(f"\t{col}", end="")
+                print("")
+
+            total_meal = this_month_data.total_meal
+            total_bazar = this_month_data.total_bazar
+            meal_rate = total_bazar / total_meal
+
+            print(f"\n\t Total Meal Of This Month is : {total_meal}")
+            print(f"\n\t Total Bazar Of This Month is : {total_meal} BDT")
+            print(f"Per Meal Rate is: {meal_rate} BDT")
+            print('------------------------------------------------------------------------')
+            
+
+        else:
+            print(f"Sorry! Month: {month} & Year: {year} of data not found ")
+
+        print('\n------------------------------------------------------------------------')
+        
+
 
 
 
@@ -63,8 +158,19 @@ class Hostel:
 
     def add_month(self, month_name,year):
         month = Month(month_name,year)
-        month_obj = {month_name+year : month}
-        self.months_data.append(month_obj)
+        # month_obj = {month_name+year : month}
+        self.months_data[month_name+year] = month
+
+
+    def add_admin(self, member):
+        for mem in self.admins:
+            if mem.name == member.name and mem.phone == member.phone:
+                print(f"Name: {member.name} and Phone: {member.phone} this admin is already exit, try another!!!")
+                return
+        self.admins.append(member)
+        print(f"Name: {member.name} and Phone: {member.phone} this admin added successfully !!!")
+
+
 
 
     def add_member(self, member):
@@ -89,7 +195,6 @@ class Hostel:
             print("Your selected member's current value:\n")
             print("Name\tPhone\tEmail")
             print("-------------------------------------------------------")
-
             print(f"{member.name}\t{member.phone}\t{member.email}")
 
             name = input('Enter the updated name: ')
@@ -104,6 +209,7 @@ class Hostel:
         else:
             print("Member not found !!!")
     
+
     def delete_member(self, member_name, member_phone):
         member = self.find_member(member_name, member_phone)
         if member:
@@ -112,10 +218,13 @@ class Hostel:
         else:
             print("Member not found to delete !!!")
     
+
     def view_all_members(self):
-        print("All Member List: \n")
-        print("Name\tPhone\tEmail")
+        print("\n------- All Member List -------\n")
+        print("Name\tPhone\t\tEmail")
         print("-------------------------------------------------------")
         for member in self.members:
             print(f"{member.name}\t{member.phone}\t{member.email}")
 
+
+ 
